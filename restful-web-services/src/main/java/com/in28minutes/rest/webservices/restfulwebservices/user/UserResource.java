@@ -36,6 +36,14 @@ public class UserResource {
 		}
 	}
 	
+	@GetMapping(path="/delusers/{id}")
+	public void deleteUser( @PathVariable int id) {
+		System.out.println("Hi FindOne");
+		User user = userService.deleteById(id);
+		if(null==user) {
+			throw new UserNotFoundException("id - "+id) ; 
+		}
+	}
 	@SuppressWarnings("rawtypes")
 	@PostMapping("/users")
 	public ResponseEntity createUser(@RequestBody User user) {
