@@ -5,10 +5,11 @@ import java.util.List;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.server.mvc.ControllerLinkBuilder;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.hateoas.Resource;
+import static org.springframework.hateoas.mvc.ControllerLinkBuilder.*;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,11 +32,11 @@ public class UserResource {
 	
 	//http://localhost:8080/users/1
 	@GetMapping(path="/users/{id}")
-	public EntityModel<User> retrieveUser( @PathVariable int id) {
+	public Resource<User> retrieveUser( @PathVariable int id) {
 		User user = userService.findOne(id);
 		if(null!=user) {
-			EntityModel<User> model = new EntityModel<>(user);
-			WebMvcLinkBuilder linkTo = WebMvcLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).retrieveAllUsers());
+			Resource<User> model = new Resource<>(user);
+			ControllerLinkBuilder linkTo = linkTo(methodOn(this.getClass()).retrieveAllUsers());
 			model.add(linkTo.withRel("all-users"));
 			return model;
 		}else {
@@ -44,7 +45,7 @@ public class UserResource {
 	}
 	
 	//http://localhost:8080/delusers/1
-	@GetMapping(path="/delusers/{id}")
+	@DeleteMapping(path="/delusers/{id}")
 	public void deleteUser(@PathVariable int id) {
 		System.out.println("Hi FindOne");
 		User user = userService.deleteById(id);
@@ -70,4 +71,11 @@ public class UserResource {
 		  return ResponseEntity.created(location.toUri()).build();
 	}
 
+	
+	/**
+	 * Swager UI Link 	: http://localhost:8080/swagger-ui.html
+	 * Swager Link	  	:	http://localhost:8080/v2/api-docs
+	 * actiator Link  	:	http://localhost:8080/actuator
+	 * actiator UI Link :	http://localhost:8080/
+	 */
 }
