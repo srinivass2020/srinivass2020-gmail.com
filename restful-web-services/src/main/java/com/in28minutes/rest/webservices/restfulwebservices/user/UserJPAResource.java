@@ -1,6 +1,7 @@
 package com.in28minutes.rest.webservices.restfulwebservices.user;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.validation.Valid;
 
@@ -19,23 +20,26 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponents;
 
 @RestController
-public class UserResource {
+public class UserJPAResource {
 	
 	@Autowired
-	private UserDaoService userService;
+	private UserRepository userRepository;
 	
-	//http://localhost:8080/users
-	@GetMapping("/users")
+	@Autowired
+	private PostRepository postRepository;
+	
+	//http://localhost:8080/jpa/users
+	@GetMapping("/jpa/users")
 	public List<User> retrieveAllUsers(){
-		return userService.findAll();
+		return userRepository.findAll();
 	}
 	
-	//http://localhost:8080/users/1
-	@GetMapping(path="/users/{id}")
+	//http://localhost:8080/jpa/users/1
+	@GetMapping(path="/jpa/users/{id}")
 	public Resource<User> retrieveUser( @PathVariable int id) {
-		User user = userService.findOne(id);
-		if(null!=user) {
-			Resource<User> model = new Resource<>(user);
+		Optional<User> user = userRepository.findById(id);
+		if(user.isPresent()) {
+			Resource<User> model = new Resource<>(user.get());
 			ControllerLinkBuilder linkTo = linkTo(methodOn(this.getClass()).retrieveAllUsers());
 			model.add(linkTo.withRel("all-users"));
 			return model;
@@ -44,14 +48,11 @@ public class UserResource {
 		}
 	}
 	
-	//http://localhost:8080/delusers/1
-	@DeleteMapping(path="/delusers/{id}")
+	//http://localhost:8080/jpa/delusers/1
+	@DeleteMapping(path="/jpa/delusers/{id}")
 	public void deleteUser(@PathVariable int id) {
 		System.out.println("Hi FindOne");
-		User user = userService.deleteById(id);
-		if(null==user) {
-			throw new UserNotFoundException("id - "+id) ; 
-		}
+		userRepository.deleteById(id);
 	}
 	/**
 	 * headers 	: 	Content-Type = application/json
@@ -64,13 +65,35 @@ public class UserResource {
 	 * 
 	 */
 	@SuppressWarnings("rawtypes")
-	@PostMapping("/users")
+	@PostMapping("/jpa/users")
 	public ResponseEntity createUser(@Valid @RequestBody User user) {
-		User savedUser = userService.save(user);
+		User savedUser = userRepository.save(user);
 		  UriComponents location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(savedUser.getId()); 
 		  return ResponseEntity.created(location.toUri()).build();
 	}
 
+	@SuppressWarnings("rawtypes")
+	@PostMapping("/jpa/users/{id}/posts")
+	public ResponseEntity createPost(@PathVariable int id,@RequestBody Post post) {
+		Optional<User> userOptional = userRepository.findById(id);
+		if(!userOptional.isPresent()) {
+			throw new UserNotFoundException("Id "+id+" is Not Present");
+		}
+		User user = userOptional.get();
+		post.setUser(user);
+		Post savedPost = postRepository.save(post);
+		  UriComponents location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(savedPost.getId()); 
+		  return ResponseEntity.created(location.toUri()).build();
+	}
+	
+	@GetMapping("/jpa/users/{id}/posts")
+	public List<Post> retrieveAllUsers(@PathVariable int id){
+		Optional<User> userOptional = userRepository.findById(id);
+		if(!userOptional.isPresent()) {
+			throw new UserNotFoundException("Id "+id+" is Not Present");
+		}
+		return userOptional.get().getPosts();
+	}
 	
 	/**
 	 * Swager UI Link 	: 	http://localhost:8080/swagger-ui.html
